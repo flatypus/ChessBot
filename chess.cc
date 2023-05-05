@@ -127,18 +127,22 @@ void printBoard(const ChessBoard &board)
     }
 }
 
-bool checkMove(int startX, int startY, int endX, int endY, char symbol){
-    if (startX == endX && startY == endY){
+bool checkMove(int startX, int startY, int endX, int endY, char symbol)
+{
+    if (startX == endX && startY == endY)
+    {
         cout << "Cannot move to same location";
         return false;
     }
     cout << startX << " " << startY << " " << endX << " " << endY << " " << symbol << endl;
-    switch (symbol){
-        case 'K':
-            if (abs(startX-endX)>1 || abs(startY-endY)>1){
-                cout << "Invalid move for King";
-                return false;
-            }
+    switch (symbol)
+    {
+    case 'K':
+        if (abs(startX - endX) > 1 || abs(startY - endY) > 1)
+        {
+            cout << "Invalid move for King";
+            return false;
+        }
     }
     return true;
 }
@@ -172,9 +176,10 @@ void doMove(const string &move, ChessBoard &board, int moveNumber)
             {
                 if (*t == horizontalCoord)
                 {
-                    cout << horizontalCoord - 1  << ", " << verticalInt << endl;
+                    cout << horizontalCoord - 1 << ", " << verticalInt << endl;
                     cout << moved.getX() << ", " << moved.getY() << endl;
-                    if (checkMove(moved.getX(), moved.getY(), horizontalCoord, verticalInt, moved.getSymbol())){
+                    if (checkMove(moved.getX(), moved.getY(), horizontalCoord, verticalInt, moved.getSymbol()))
+                    {
                         board.setPiece(verticalInt, horizontalCoord - 1, moved);
                     }
                     break;
