@@ -6,7 +6,7 @@
 
 using namespace std;
 
-// vector<char> coords = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+vector<char> coords = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 
 class Symbol
 {
@@ -17,6 +17,7 @@ public:
     const static char BISHOP = 'B';
     const static char KNIGHT = 'N';
     const static char PAWN = 'P';
+    const static char EMPTY = '.';
 };
 
 class Piece
@@ -35,53 +36,75 @@ public:
                                                   symbol(symbol),
                                                   x(x),
                                                   y(y) {}
+    char getSymbol()
+    {
+        return symbol;
+    }
+    int getColor()
+    {
+        return color;
+    }
+    int getX()
+    {
+        return x;
+    }
+    int getY()
+    {
+        return y;
+    }
 };
 
 class Board
 {
-    // vector<vector<Piece>> board;
+    mutable vector<vector<Piece>> board;
 
 public:
     Board()
     {
-        // setupBoard();
-        // displayBoard();
+        setupBoard();
+        displayBoard();
     }
 
 private:
     void setupBoard()
     {
-        // board.resize(8);
-        // for (int i = 0; i < 8; i++)
-        // {
-        //     board[i].resize(8);
-        // }
-        // board[0] = {Piece(0, Symbol::ROOK, 0, 0), Piece(0, Symbol::KNIGHT, 1, 0), Piece(0, Symbol::BISHOP, 2, 0),
-        //             Piece(0, Symbol::QUEEN, 3, 0), Piece(0, Symbol::KING, 4, 0), Piece(0, Symbol::BISHOP, 5, 0),
-        //             Piece(0, Symbol::KNIGHT, 6, 0), Piece(0, Symbol::ROOK, 7, 0)};
-        // board[7] = {Piece(1, Symbol::ROOK, 0, 7), Piece(1, Symbol::KNIGHT, 1, 7), Piece(1, Symbol::BISHOP, 2, 7),
-        //             Piece(1, Symbol::QUEEN, 3, 7), Piece(1, Symbol::KING, 4, 7), Piece(1, Symbol::BISHOP, 5, 7),
-        //             Piece(1, Symbol::KNIGHT, 6, 7), Piece(1, Symbol::ROOK, 7, 7)};
-        // for (int i = 0; i < 8; i++)
-        // {
-        //     board[1].push_back(Piece(0, Symbol::PAWN, i, 1));
-        //     board[6].push_back(Piece(1, Symbol::PAWN, i, 6));
-        // }
+        board.resize(8);
+        for (int i = 0; i < 8; i++)
+        {
+            board[i].resize(8);
+        }
+        vector<char> backRow = {Symbol::ROOK, Symbol::KNIGHT, Symbol::BISHOP,
+                                Symbol::QUEEN, Symbol::KING, Symbol::BISHOP,
+                                Symbol::KNIGHT, Symbol::ROOK};
+        for (int i = 0; i < 8; i++)
+        {
+            board[0][i] = Piece(Piece::BLACK, backRow[i], i, 0);
+            board[1][i] = Piece(Piece::BLACK, Symbol::PAWN, i, 1);
+            for (int j = 2; j < 6; j++)
+            {
+                board[j][i] = Piece(Piece::BLACK, Symbol::EMPTY, i, j);
+            }
+            board[6][i] = Piece(Piece::WHITE, Symbol::PAWN, i, 6);
+            board[7][i] = Piece(Piece::WHITE, backRow[i], i, 7);
+        }
     }
-    void displayBoard()
+    void
+    displayBoard()
     {
-        // for (int y = 0; y < board.size(); y++)
-        // {
-        //     for (int x = 0; x < board[0].size(); x++)
-        //     {
-        //         cout << x << " " << y << endl;
-        //     }
-        // }
+        for (int y = 0; y < board.size(); y++)
+        {
+            for (int x = 0; x < board[0].size(); x++)
+            {
+                char symbol = board[y][x].getSymbol();
+                cout << symbol << " ";
+            }
+            cout << endl;
+        }
     }
 };
 
 int main()
 {
-    // Board board = Board();
+    Board board = Board();
     return 0;
-}  
+}
