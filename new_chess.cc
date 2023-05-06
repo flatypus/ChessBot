@@ -3,28 +3,17 @@
 #include <string>
 #include <cstdio>
 #include <cstring>
+#include "color.h"
 
 using namespace std;
 
 vector<char> coords = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 
-class Symbol
-{
-public:
-    const static char KING = 'K';
-    const static char QUEEN = 'Q';
-    const static char ROOK = 'R';
-    const static char BISHOP = 'B';
-    const static char KNIGHT = 'N';
-    const static char PAWN = 'P';
-    const static char EMPTY = '.';
-};
-
 class Piece
 {
 private:
     int color;
-    char symbol;
+    Symbol symbol;
     int x;
     int y;
 
@@ -32,11 +21,11 @@ public:
     const static int BLACK = 0;
     const static int WHITE = 1;
     Piece() {}
-    Piece(int color, char symbol, int x, int y) : color(color),
-                                                  symbol(symbol),
-                                                  x(x),
-                                                  y(y) {}
-    char getSymbol()
+    Piece(int color, Symbol symbol, int x, int y) : color(color),
+                                                    symbol(symbol),
+                                                    x(x),
+                                                    y(y) {}
+    Symbol getSymbol()
     {
         return symbol;
     }
@@ -73,9 +62,9 @@ private:
         {
             board[i].resize(8);
         }
-        vector<char> backRow = {Symbol::ROOK, Symbol::KNIGHT, Symbol::BISHOP,
-                                Symbol::QUEEN, Symbol::KING, Symbol::BISHOP,
-                                Symbol::KNIGHT, Symbol::ROOK};
+        vector<Symbol> backRow = {Symbol::ROOK, Symbol::KNIGHT, Symbol::BISHOP,
+                                  Symbol::QUEEN, Symbol::KING, Symbol::BISHOP,
+                                  Symbol::KNIGHT, Symbol::ROOK};
         for (int i = 0; i < 8; i++)
         {
             board[0][i] = Piece(Piece::BLACK, backRow[i], i, 0);
@@ -88,15 +77,17 @@ private:
             board[7][i] = Piece(Piece::WHITE, backRow[i], i, 7);
         }
     }
-    void
-    displayBoard()
+    void displayBoard()
     {
         for (int y = 0; y < board.size(); y++)
         {
             for (int x = 0; x < board[0].size(); x++)
             {
-                char symbol = board[y][x].getSymbol();
-                cout << symbol << " ";
+                int color = board[y][x].getColor();
+                Symbol symbol = board[y][x].getSymbol();
+                // green and lightbrown/beige
+                // alternating color scheme with modulus
+                cout << Color::getColoredString(symbol, Foreground::WHITE, (x + y) % 2 == 0 ? Background::BEIGE : Background::GREEN, color);
             }
             cout << endl;
         }
@@ -106,5 +97,6 @@ private:
 int main()
 {
     Board board = Board();
+    // cout << Color::getColoredString("Hello", Foreground::RED, Background::BRIGHT_WHITE) << endl;
     return 0;
 }
