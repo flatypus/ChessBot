@@ -52,9 +52,23 @@ public:
     {
         setupBoard();
         displayBoard();
+        requestMove();
     }
 
 private:
+    void requestMove()
+    {
+        string input;
+        cout << "Enter a move: " << endl;
+        cin >> input;
+        cout << parseMove(input) << endl;
+        cout << input << endl;
+    }
+
+    int parseMove(string move)
+    {
+    }
+
     void setupBoard()
     {
         board.resize(8);
@@ -97,6 +111,5 @@ private:
 int main()
 {
     Board board = Board();
-    // cout << Color::getColoredString("Hello", Foreground::RED, Background::BRIGHT_WHITE) << endl;
     return 0;
 }
