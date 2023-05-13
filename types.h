@@ -8,3 +8,11 @@ enum class Symbol : char
     PAWN = 'P',
     EMPTY = ' ',
 };
+
+class Player
+{
+public:
+    static const int WHITE = 0;
+    static const int BLACK = 1;
+    static const int EMPTY = -1;
+};

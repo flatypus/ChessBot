@@ -1,15 +1,22 @@
-#include <iostream>
-#include <vector>
-#include <string>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
 #include <map>
+#include <memory>
+#include <string>
+#include <vector>
 #include "color.h"
 #include "utils.h"
 
 using namespace std;
 
-vector<char> coords = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+void _err(string msg)
+{
+    cout << "Invalid move: " << msg << endl;
+}
+
+vector<char>
+    coords = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 map<char, int> letter_map = {
     {'a', 0},
     {'b', 1},
@@ -29,7 +36,7 @@ map<char, int> num_map = {
     {'7', 6},
     {'8', 7}};
 
-class Piece
+class Piece : public Player
 {
 private:
     int color;
@@ -38,9 +45,6 @@ private:
     int y;
 
 public:
-    const static int WHITE = 0;
-    const static int BLACK = 1;
-    const static int EMPTY = -1;
     Piece() {}
     Piece(int color, Symbol symbol, int x, int y) : color(color),
                                                     symbol(symbol),
@@ -171,11 +175,11 @@ public:
 
 class Board
 {
-    mutable vector<vector<Piece *>> board;
-    mutable vector<Piece *> white_pieces;
-    mutable vector<Piece *> black_pieces;
-    mutable vector<Piece *> white_capture;
-    mutable vector<Piece *> black_capture;
+    mutable vector<vector<shared_ptr<Piece>>> board;
+    mutable vector<shared_ptr<Piece>> white_pieces;
+    mutable vector<shared_ptr<Piece>> black_pieces;
+    mutable vector<shared_ptr<Piece>> white_capture;
+    mutable vector<shared_ptr<Piece>> black_capture;
     mutable int turn = Piece::WHITE;
 
 public:
@@ -212,33 +216,34 @@ private:
         }
     }
 
-    Piece *pieceFromSymbol(Symbol symbol, int color, int x, int y)
+    shared_ptr<Piece> pieceFromSymbol(Symbol symbol, int color, int x, int y)
     {
         switch (symbol)
         {
         case Symbol::PAWN:
-            return new Pawn(color, x, y);
+            return make_shared<Pawn>(color, x, y);
         case Symbol::ROOK:
-            return new Rook(color, x, y);
+            return make_shared<Rook>(color, x, y);
         case Symbol::KNIGHT:
-            return new Knight(color, x, y);
+            return make_shared<Knight>(color, x, y);
         case Symbol::BISHOP:
-            return new Bishop(color, x, y);
+            return make_shared<Bishop>(color, x, y);
         case Symbol::QUEEN:
-            return new Queen(color, x, y);
+            return make_shared<Queen>(color, x, y);
         case Symbol::KING:
-            return new King(color, x, y);
+            return make_shared<King>(color, x, y);
         default:
-            return new Piece(Piece::EMPTY, Symbol::EMPTY, x, y);
+            return make_shared<Piece>(-1, Symbol::EMPTY, x, y);
         }
     }
 
-    void makeMove(Piece *piece, int new_file, int new_rank)
+    void makeMove(shared_ptr<Piece> piece, int new_file, int new_rank)
     {
         cout << new_file << " " << new_rank << endl;
         int old_file = piece->getX();
         int old_rank = piece->getY();
-        board[old_rank][old_file] = new Piece(Piece::EMPTY, Symbol::EMPTY, old_file, old_rank);
+
+        board[old_rank][old_file] = make_shared<Piece>(-1, Symbol::EMPTY, old_file, old_rank);
         piece->setX(new_file);
         piece->setY(new_rank);
         board[new_rank][new_file] = piece;
@@ -247,9 +252,9 @@ private:
     void implementCapture(int color, int x, int y)
     {
         cout << "implementing capture " << x << " " << y << endl;
-        vector<Piece *> *piece_list = color == Piece::WHITE ? &black_pieces : &white_pieces;
-        vector<Piece *> *capture_list = color == Piece::WHITE ? &white_capture : &black_capture;
-        for (vector<Piece *>::iterator it = piece_list->begin(); it != piece_list->end(); ++it)
+        vector<shared_ptr<Piece>> *piece_list = color == Piece::WHITE ? &black_pieces : &white_pieces;
+        vector<shared_ptr<Piece>> *capture_list = color == Piece::WHITE ? &white_capture : &black_capture;
+        for (vector<shared_ptr<Piece>>::iterator it = piece_list->begin(); it != piece_list->end(); ++it)
         {
             (*it)->getInfo();
             if ((*it)->getX() == x && (*it)->getY() == y)
@@ -266,10 +271,25 @@ private:
     {
         if (input.length() < 2)
         {
-            cout << "Invalid move: too short" << endl;
+            _err("Too short");
             return false;
         }
-        bool capture = input.find('x') != string::npos;
+        char file = input[input.length() - 2];
+        char rank = input[input.length() - 1];
+
+        if (!inRange(file, rank))
+        {
+            _err("Out of range");
+            return false;
+        }
+
+        if (board[num_map[rank]][letter_map[file]]->getColor() == turn)
+        {
+            _err("Cannot capture own piece");
+            return false;
+        }
+
+        bool capture = board[num_map[rank]][letter_map[file]]->getSymbol() != Symbol::EMPTY;
         char piece;
         if (capture)
         {
@@ -279,13 +299,11 @@ private:
         {
             piece = input.length() == 2 ? 'P' : input[0];
         }
-        char rank = input[input.length() - 1];
-        char file = input[input.length() - 2];
         cout << piece << " " << file << " " << rank << " " << capture << endl;
-        vector<Piece *> valid_pieces = {};
-        for (vector<Piece *> row : board)
+        vector<shared_ptr<Piece>> valid_pieces = {};
+        for (vector<shared_ptr<Piece>> row : board)
         {
-            for (Piece *p : row)
+            for (shared_ptr<Piece> p : row)
             {
                 p->getInfo();
                 if ((char)(p->getSymbol()) == piece && p->getColor() == turn)
@@ -295,7 +313,7 @@ private:
             }
         }
         cout << valid_pieces.size() << endl;
-        for (Piece *p : valid_pieces)
+        for (shared_ptr<Piece> p : valid_pieces)
         {
             int x = letter_map[file];
             int y = num_map[rank];
@@ -303,14 +321,14 @@ private:
                 continue;
             if (p->validMove(letter_map[file], num_map[rank], capture))
             {
-                cout << "valid move" << endl;
+                cout << "Valid move" << endl;
                 if (capture)
                     implementCapture(turn, x, y);
                 makeMove(p, x, y);
                 return true;
             }
         }
-        cout << "Invalid move: could not find piece" << endl;
+        _err("No valid pieces");
         return false;
     }
 
@@ -335,12 +353,12 @@ private:
         }
     }
 
-    void printList(vector<Piece *> list)
+    void printList(vector<shared_ptr<Piece>> list)
     {
-        vector<Piece *> sorted_list = {};
+        vector<shared_ptr<Piece>> sorted_list = {};
         for (Symbol symbol : {Symbol::KING, Symbol::QUEEN, Symbol::ROOK, Symbol::BISHOP, Symbol::KNIGHT, Symbol::PAWN})
         {
-            for (Piece *p : list)
+            for (shared_ptr<Piece> p : list)
             {
                 if (p->getSymbol() == symbol)
                 {
@@ -348,7 +366,7 @@ private:
                 }
             }
         }
-        for (Piece *p : sorted_list)
+        for (shared_ptr<Piece> p : sorted_list)
         {
             cout << Color::to_chess_piece(p->getColor(), p->getSymbol()) << " ";
         }
