@@ -29,22 +29,6 @@ enum class Background
 class Color
 {
 public:
-    static string to_String(Foreground fg)
-    {
-        return to_string(static_cast<int>(fg));
-    }
-    static string to_String(Background bg)
-    {
-        switch (bg)
-        {
-        case Background::BEIGE:
-            return "48;2;255;255;204";
-        default:
-            break;
-        }
-        return to_string(static_cast<int>(bg));
-    }
-
     static string to_chess_piece(int color, Symbol symbol)
     {
         unordered_map<Symbol, string> white_piece_map = {
@@ -75,6 +59,21 @@ public:
         default:
             return " ";
         }
+    }
+    static string to_String(Foreground fg)
+    {
+        return to_string(static_cast<int>(fg));
+    }
+    static string to_String(Background bg)
+    {
+        switch (bg)
+        {
+        case Background::BEIGE:
+            return "48;2;255;255;204";
+        default:
+            break;
+        }
+        return to_string(static_cast<int>(bg));
     }
 
     static string getColoredString(Symbol symbol, Foreground fg, Background bg, int color)

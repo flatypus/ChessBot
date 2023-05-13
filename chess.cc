@@ -54,6 +54,14 @@ public:
     {
         return color;
     }
+    void setX(int x)
+    {
+        this->x = x;
+    }
+    void setY(int y)
+    {
+        this->y = y;
+    }
     int getX()
     {
         return x;
@@ -62,7 +70,7 @@ public:
     {
         return y;
     }
-    virtual bool validMove(int x, int y)
+    virtual bool validMove(int x, int y, bool capture = false)
     {
         return true;
     }
@@ -77,19 +85,34 @@ class Pawn : public Piece
 {
 public:
     Pawn(int color, int x, int y) : Piece(color, Symbol::PAWN, x, y) {}
-    bool validMove(int x, int y)
+    bool validMove(int x, int y, bool capture = false)
     {
         cout << this->getX() << " " << this->getY() << " " << x << " " << y << endl;
         getInfo();
         bool valid = false;
-        switch (this->getColor())
+        if (capture)
         {
-        case Piece::WHITE:
-            valid = (this->getY() == 1 && y == 3 || this->getY() + 1 == y) && this->getX() == x;
-            break;
-        case Piece::BLACK:
-            valid = (this->getY() == 6 && y == 4 || this->getY() - 1 == y) && this->getX() == x;
-            break;
+            switch (this->getColor())
+            {
+            case Piece::WHITE:
+                valid = this->getY() + 1 == y && (this->getX() + 1 == x || this->getX() - 1 == x);
+                break;
+            case Piece::BLACK:
+                valid = this->getY() - 1 == y && (this->getX() + 1 == x || this->getX() - 1 == x);
+                break;
+            }
+        }
+        else
+        {
+            switch (this->getColor())
+            {
+            case Piece::WHITE:
+                valid = (this->getY() == 1 && y == 3 || this->getY() + 1 == y) && this->getX() == x && !capture;
+                break;
+            case Piece::BLACK:
+                valid = (this->getY() == 6 && y == 4 || this->getY() - 1 == y) && this->getX() == x && !capture;
+                break;
+            }
         }
         cout << valid << endl;
         return valid;
@@ -149,6 +172,10 @@ public:
 class Board
 {
     mutable vector<vector<Piece *>> board;
+    mutable vector<Piece *> white_pieces;
+    mutable vector<Piece *> black_pieces;
+    mutable vector<Piece *> white_capture;
+    mutable vector<Piece *> black_capture;
     mutable int turn = Piece::WHITE;
 
 public:
@@ -212,44 +239,78 @@ private:
         int old_file = piece->getX();
         int old_rank = piece->getY();
         board[old_rank][old_file] = new Piece(Piece::EMPTY, Symbol::EMPTY, old_file, old_rank);
+        piece->setX(new_file);
+        piece->setY(new_rank);
         board[new_rank][new_file] = piece;
+    }
+
+    void implementCapture(int color, int x, int y)
+    {
+        cout << "implementing capture " << x << " " << y << endl;
+        vector<Piece *> *piece_list = color == Piece::WHITE ? &black_pieces : &white_pieces;
+        vector<Piece *> *capture_list = color == Piece::WHITE ? &white_capture : &black_capture;
+        for (vector<Piece *>::iterator it = piece_list->begin(); it != piece_list->end(); ++it)
+        {
+            (*it)->getInfo();
+            if ((*it)->getX() == x && (*it)->getY() == y)
+            {
+                cout << "found piece" << endl;
+                capture_list->push_back(*it);
+                piece_list->erase(it);
+                break;
+            }
+        }
     }
 
     bool parseMove(string input)
     {
         if (input.length() < 2)
         {
-            cout << "Invalid move" << endl;
+            cout << "Invalid move: too short" << endl;
             return false;
         }
-        char piece = input.length() == 2 ? 'P' : input[0];
+        bool capture = input.find('x') != string::npos;
+        char piece;
+        if (capture)
+        {
+            piece = isupper(input[0]) ? input[0] : 'P';
+        }
+        else
+        {
+            piece = input.length() == 2 ? 'P' : input[0];
+        }
         char rank = input[input.length() - 1];
         char file = input[input.length() - 2];
+        cout << piece << " " << file << " " << rank << " " << capture << endl;
         vector<Piece *> valid_pieces = {};
         for (vector<Piece *> row : board)
         {
             for (Piece *p : row)
             {
+                p->getInfo();
                 if ((char)(p->getSymbol()) == piece && p->getColor() == turn)
                 {
                     valid_pieces.push_back(p);
                 }
             }
         }
+        cout << valid_pieces.size() << endl;
         for (Piece *p : valid_pieces)
         {
             int x = letter_map[file];
             int y = num_map[rank];
             if (p->getX() == x && p->getY() == y)
                 continue;
-            if (p->validMove(letter_map[file], num_map[rank]))
+            if (p->validMove(letter_map[file], num_map[rank], capture))
             {
                 cout << "valid move" << endl;
+                if (capture)
+                    implementCapture(turn, x, y);
                 makeMove(p, x, y);
                 return true;
             }
         }
-        cout << "Invalid move" << endl;
+        cout << "Invalid move: could not find piece" << endl;
         return false;
     }
 
@@ -260,7 +321,6 @@ private:
         for (int i = 0; i < 8; i++)
         {
             board[0].push_back(pieceFromSymbol(backRow[i], Piece::WHITE, i, 0));
-
             board[1].push_back(pieceFromSymbol(Symbol::PAWN, Piece::WHITE, i, 1));
             for (int j = 2; j < 6; j++)
             {
@@ -268,8 +328,32 @@ private:
             }
             board[6].push_back(pieceFromSymbol(Symbol::PAWN, Piece::BLACK, i, 6));
             board[7].push_back(pieceFromSymbol(backRow[i], Piece::BLACK, i, 7));
+            white_pieces.push_back(board[0][i]);
+            white_pieces.push_back(board[1][i]);
+            black_pieces.push_back(board[6][i]);
+            black_pieces.push_back(board[7][i]);
         }
     }
+
+    void printList(vector<Piece *> list)
+    {
+        vector<Piece *> sorted_list = {};
+        for (Symbol symbol : {Symbol::KING, Symbol::QUEEN, Symbol::ROOK, Symbol::BISHOP, Symbol::KNIGHT, Symbol::PAWN})
+        {
+            for (Piece *p : list)
+            {
+                if (p->getSymbol() == symbol)
+                {
+                    sorted_list.push_back(p);
+                }
+            }
+        }
+        for (Piece *p : sorted_list)
+        {
+            cout << Color::to_chess_piece(p->getColor(), p->getSymbol()) << " ";
+        }
+    }
+
     void displayBoard()
     {
         for (int y = board.size() - 1; y >= 0; y--)
@@ -281,6 +365,25 @@ private:
                 int color = board[y][x]->getColor();
                 Symbol symbol = board[y][x]->getSymbol();
                 cout << Color::getColoredString(symbol, Foreground::WHITE, (x + y) % 2 == 0 ? Background::BEIGE : Background::GREEN, color);
+            }
+            switch (y)
+            {
+            case 7:
+                cout << "    White pieces: ";
+                printList(white_pieces);
+                break;
+            case 6:
+                cout << "    Black pieces: ";
+                printList(black_pieces);
+                break;
+            case 5:
+                cout << "    White captured: ";
+                printList(white_capture);
+                break;
+            case 4:
+                cout << "    Black captured: ";
+                printList(black_capture);
+                break;
             }
             cout << endl;
         }
