@@ -91,8 +91,6 @@ public:
     Pawn(int color, int x, int y) : Piece(color, Symbol::PAWN, x, y) {}
     bool validMove(int x, int y, bool capture = false)
     {
-        cout << this->getX() << " " << this->getY() << " " << x << " " << y << endl;
-        getInfo();
         bool valid = false;
         if (capture)
         {
@@ -118,7 +116,6 @@ public:
                 break;
             }
         }
-        cout << valid << endl;
         return valid;
     };
 };
@@ -203,6 +200,25 @@ private:
     {
         return !(letter_map.find(file) == letter_map.end() || num_map.find(rank) == num_map.end());
     }
+
+    bool checkOverlap(int start_x, int start_y, int end_x, int end_y)
+    {
+        // return true if no overlap
+        cout << "Checking overlap" << endl;
+        int x_diff = end_x - start_x;
+        int y_diff = end_y - start_y;
+        int x_dir = x_diff == 0 ? 0 : x_diff / abs(x_diff);
+        int y_dir = y_diff == 0 ? 0 : y_diff / abs(y_diff);
+        for (int i = 1; i < max(abs(x_diff), abs(y_diff)); i++)
+        {
+            if (board[start_y + i * y_dir][start_x + i * x_dir]->getSymbol() != Symbol::EMPTY)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     void requestMove()
     {
         string input;
@@ -251,15 +267,14 @@ private:
 
     void implementCapture(int color, int x, int y)
     {
-        cout << "implementing capture " << x << " " << y << endl;
+        cout << "Implementing capture " << x << " " << y << endl;
         vector<shared_ptr<Piece>> *piece_list = color == Piece::WHITE ? &black_pieces : &white_pieces;
         vector<shared_ptr<Piece>> *capture_list = color == Piece::WHITE ? &white_capture : &black_capture;
         for (vector<shared_ptr<Piece>>::iterator it = piece_list->begin(); it != piece_list->end(); ++it)
         {
-            (*it)->getInfo();
             if ((*it)->getX() == x && (*it)->getY() == y)
             {
-                cout << "found piece" << endl;
+                (*it)->getInfo();
                 capture_list->push_back(*it);
                 piece_list->erase(it);
                 break;
@@ -291,6 +306,7 @@ private:
 
         bool capture = board[num_map[rank]][letter_map[file]]->getSymbol() != Symbol::EMPTY;
         char piece;
+        char disambiguation;
         if (capture)
         {
             piece = isupper(input[0]) ? input[0] : 'P';
@@ -299,20 +315,37 @@ private:
         {
             piece = input.length() == 2 ? 'P' : input[0];
         }
-        cout << piece << " " << file << " " << rank << " " << capture << endl;
+        if (piece != 'P' && piece != 'R' && piece != 'N' && piece != 'B' && piece != 'Q' && piece != 'K')
+        {
+            _err("Invalid piece");
+            return false;
+        }
+        if (piece == 'P')
+        {
+            disambiguation = input.length() == 2 ? ' ' : input[0];
+        }
+        else
+        {
+            disambiguation = input.length() == 3 ? ' ' : input[1];
+        }
+        cout << piece << " " << file << " " << rank << " " << capture << " " << disambiguation << endl;
         vector<shared_ptr<Piece>> valid_pieces = {};
         for (vector<shared_ptr<Piece>> row : board)
         {
             for (shared_ptr<Piece> p : row)
             {
-                p->getInfo();
-                if ((char)(p->getSymbol()) == piece && p->getColor() == turn)
+                // fxe4
+                // R6g4
+                if ((char)(p->getSymbol()) != piece || p->getColor() != turn)
+                {
+                    continue;
+                }
+                if (disambiguation == ' ' ? true : (disambiguation == coords[p->getX()] || disambiguation == coords[p->getY()]))
                 {
                     valid_pieces.push_back(p);
                 }
             }
         }
-        cout << valid_pieces.size() << endl;
         for (shared_ptr<Piece> p : valid_pieces)
         {
             int x = letter_map[file];
@@ -321,6 +354,11 @@ private:
                 continue;
             if (p->validMove(letter_map[file], num_map[rank], capture))
             {
+                if (!checkOverlap(p->getX(), p->getY(), x, y))
+                {
+                    _err("overlap");
+                    return false;
+                }
                 cout << "Valid move" << endl;
                 if (capture)
                     implementCapture(turn, x, y);
@@ -328,11 +366,12 @@ private:
                 return true;
             }
         }
-        _err("No valid pieces");
+        _err("move doesn't work");
         return false;
     }
 
-    void setupBoard()
+    void
+    setupBoard()
     {
         vector<Symbol> backRow = {Symbol::ROOK, Symbol::KNIGHT, Symbol::BISHOP, Symbol::QUEEN, Symbol::KING, Symbol::BISHOP, Symbol::KNIGHT, Symbol::ROOK};
         board.resize(8);

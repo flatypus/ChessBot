@@ -76,10 +76,16 @@ public:
         return to_string(static_cast<int>(bg));
     }
 
-    static string getColoredString(Symbol symbol, Foreground fg, Background bg, int color, bool is_chess_piece = true)
+    static string getColoredString(Symbol symbol, Foreground fg, Background bg, int color)
     {
         string stringified_symbol = to_string(static_cast<int>(symbol));
-        string result = "\033[" + to_String(fg) + ";" + to_String(bg) + ";24m " + (is_chess_piece ? to_chess_piece(color, symbol) : stringified_symbol) + " \033[0m";
+        string result = "\033[" + to_String(fg) + ";" + to_String(bg) + ";24m " + to_chess_piece(color, symbol) + " \033[0m";
+        return result;
+    }
+
+    static string getColoredString(string s, Foreground fg, Background bg, int color)
+    {
+        string result = "\033[" + to_String(fg) + ";" + to_String(bg) + ";24m " + s + " \033[0m";
         return result;
     }
 };
