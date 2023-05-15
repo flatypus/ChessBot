@@ -126,7 +126,9 @@ public:
     Rook(int color, int x, int y) : Piece(color, Symbol::ROOK, x, y) {}
     bool validMove(int x, int y)
     {
-        return false;
+        cout << "Checking rook" << endl;
+        cout << this->getX() << " " << this->getY() << " " << x << " " << y << endl;
+        return this->getX() == x || this->getY() == y;
     }
 };
 
@@ -352,12 +354,14 @@ private:
             int y = num_map[rank];
             if (p->getX() == x && p->getY() == y)
                 continue;
+            cout << "Checking piece: " << (char)(p->getSymbol()) << " " << p->getX() << " " << p->getY() << endl;
             if (p->validMove(letter_map[file], num_map[rank], capture))
             {
+                cout << "Found a piece to check: " << (char)(p->getSymbol()) << " " << p->getX() << " " << p->getY() << endl;
                 if (!checkOverlap(p->getX(), p->getY(), x, y))
                 {
                     _err("overlap");
-                    return false;
+                    continue;
                 }
                 cout << "Valid move" << endl;
                 if (capture)
