@@ -27,47 +27,20 @@ private:
     bool moved = false;
 
 public:
-    Piece() {}
-    Piece(int color, Symbol symbol, int x, int y) : color(color),
-                                                    symbol(symbol),
-                                                    x(x),
-                                                    y(y) {}
-    Symbol getSymbol()
-    {
-        return symbol;
-    }
-    int getColor()
-    {
-        return color;
-    }
-    void setX(int x)
-    {
-        this->x = x;
-    }
-    void setY(int y)
-    {
-        this->y = y;
-    }
-    void setMoved()
-    {
-        this->moved = true;
-    }
-    int getX()
-    {
-        return x;
-    }
-    int getY()
-    {
-        return y;
-    }
-    bool getMoved()
-    {
-        return moved;
-    }
-    virtual bool validMove(int x, int y, bool capture = false)
-    {
-        return true;
-    }
+    Piece(int color, Symbol symbol, int x, int y) : color(color), symbol(symbol), x(x), y(y) {}
+
+    int getColor() { return color; }
+    bool getMoved() { return moved; }
+    Symbol getSymbol() { return symbol; }
+    int getX() { return x; }
+    int getY() { return y; }
+
+    void setX(int x) { this->x = x; }
+    void setY(int y) { this->y = y; }
+    void setMoved() { this->moved = true; }
+
+    virtual bool validMove(int x, int y, bool capture = false) { return true; }
+
     void getInfo()
     {
         cout << "Piece: " << (char)(symbol) << " " << color << " " << x << " " << y << std::endl;
@@ -127,8 +100,6 @@ public:
     Knight(int color, int x, int y) : Piece(color, Symbol::KNIGHT, x, y) {}
     bool validMove(int x, int y, bool capture = false)
     {
-        cout << "Checking knight" << std::endl;
-        cout << this->getX() << " " << this->getY() << " " << x << " " << y << std::endl;
         return abs(this->getX() - x) == 2 && abs(this->getY() - y) == 1 || abs(this->getX() - x) == 1 && abs(this->getY() - y) == 2;
     }
 };
@@ -212,30 +183,33 @@ private:
         return true;
     }
 
-    void short_castle(int color)
+    void castle(int color, bool longCastle)
     {
         int rank = color == Piece::WHITE ? 0 : 7;
         std::shared_ptr<Piece> king = board[rank][4];
-        std::shared_ptr<Piece> rook = board[rank][7];
+        std::shared_ptr<Piece> rook = longCastle ? board[rank][0] : board[rank][7];
+        int kingTarget = longCastle ? 2 : 6;
+        int rookTarget = longCastle ? 3 : 5;
 
-        if (!checkOverlap(king->getX(), king->getY(), 6, rank) || !checkOverlap(rook->getX(), rook->getY(), 5, rank))
+        if (!checkOverlap(king->getX(), king->getY(), kingTarget, rank) || !checkOverlap(rook->getX(), rook->getY(), rookTarget, rank))
         {
-            _err("can't short castle; pieces in the way");
+            _err("Can't castle; pieces in the way");
             return;
         }
         if (king->getSymbol() != Symbol::KING || rook->getSymbol() != Symbol::ROOK)
         {
-            _err("you can't short castle here!");
+            _err("You can't castle here!");
             return;
         }
 
         if (king->getMoved() || rook->getMoved())
         {
-            _err("can't short castle; piece has been moved before");
+            _err("Can't castle; piece has been moved before");
             return;
         }
-        makeMove(king, 6, rank);
-        makeMove(rook, 5, rank);
+
+        makeMove(king, kingTarget, rank);
+        makeMove(rook, rookTarget, rank);
     }
 
     void requestMove()
@@ -306,7 +280,12 @@ private:
     {
         if (input == "0-0")
         {
-            short_castle(turn);
+            castle(turn, false);
+            return true;
+        }
+        else if (input == "0-0-0")
+        {
+            castle(turn, true);
             return true;
         }
 
