@@ -1,9 +1,7 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
-extern int count(string s, char target)
+extern int count(std::string s, char target)
 {
     int a = 0;
     for (char c : s)
@@ -14,9 +12,9 @@ extern int count(string s, char target)
     return a;
 }
 
-extern vector<char> to_list(string s)
+extern std::vector<char> to_list(std::string s)
 {
-    vector<char> l = {};
+    std::vector<char> l = {};
     for (char c : s)
     {
         l.push_back(c);
@@ -24,10 +22,10 @@ extern vector<char> to_list(string s)
     return l;
 }
 
-extern vector<string> split(string s, char target)
+extern std::vector<std::string> split(std::string s, char target)
 {
-    vector<string> l = {};
-    string running = "";
+    std::vector<std::string> l = {};
+    std::string running = "";
     s = s + target;
     for (char c : s)
     {

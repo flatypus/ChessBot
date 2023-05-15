@@ -16,3 +16,4 @@ public:
     static const int BLACK = 1;
     static const int EMPTY = -1;
 };
+

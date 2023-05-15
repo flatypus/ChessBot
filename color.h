@@ -29,9 +29,9 @@ enum class Background
 class Color
 {
 public:
-    static string to_chess_piece(int color, Symbol symbol)
+    static std::string to_chess_piece(int color, Symbol symbol)
     {
-        unordered_map<Symbol, string> white_piece_map = {
+        unordered_map<Symbol, std::string> white_piece_map = {
             {Symbol::KING, u8"\u2654"},
             {Symbol::QUEEN, u8"\u2655"},
             {Symbol::ROOK, u8"\u2656"},
@@ -41,7 +41,7 @@ public:
             {Symbol::EMPTY, " "}};
 
         // black piece hashmap
-        unordered_map<Symbol, string> black_piece_map = {
+        unordered_map<Symbol, std::string> black_piece_map = {
             {Symbol::KING, u8"\u265A"},
             {Symbol::QUEEN, u8"\u265B"},
             {Symbol::ROOK, u8"\u265C"},
@@ -60,11 +60,11 @@ public:
             return " ";
         }
     }
-    static string to_String(Foreground fg)
+    static std::string to_String(Foreground fg)
     {
         return to_string(static_cast<int>(fg));
     }
-    static string to_String(Background bg)
+    static std::string to_String(Background bg)
     {
         switch (bg)
         {
@@ -76,16 +76,16 @@ public:
         return to_string(static_cast<int>(bg));
     }
 
-    static string getColoredString(Symbol symbol, Foreground fg, Background bg, int color)
+    static std::string getColoredString(Symbol symbol, Foreground fg, Background bg, int color)
     {
-        string stringified_symbol = to_string(static_cast<int>(symbol));
-        string result = "\033[" + to_String(fg) + ";" + to_String(bg) + ";24m " + to_chess_piece(color, symbol) + " \033[0m";
+        std::string stringified_symbol = to_string(static_cast<int>(symbol));
+        std::string result = "\033[" + to_String(fg) + ";" + to_String(bg) + ";24m " + to_chess_piece(color, symbol) + " \033[0m";
         return result;
     }
 
-    static string getColoredString(string s, Foreground fg, Background bg, int color)
+    static std::string getColoredString(std::string s, Foreground fg, Background bg, int color)
     {
-        string result = "\033[" + to_String(fg) + ";" + to_String(bg) + ";24m " + s + " \033[0m";
+        std::string result = "\033[" + to_String(fg) + ";" + to_String(bg) + ";24m " + s + " \033[0m";
         return result;
     }
 };

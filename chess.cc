@@ -6,35 +6,16 @@
 #include <string>
 #include <vector>
 #include "color.h"
+#include "maps.h"
 #include "utils.h"
 
-using namespace std;
+class Piece;
+using Row = std::vector<std::shared_ptr<Piece>>;
 
-void _err(string msg)
+void _err(std::string msg)
 {
-    cout << "Invalid move: " << msg << endl;
+    std::cout << "Invalid move: " << msg << std::endl;
 }
-
-vector<char>
-    coords = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-map<char, int> letter_map = {
-    {'a', 0},
-    {'b', 1},
-    {'c', 2},
-    {'d', 3},
-    {'e', 4},
-    {'f', 5},
-    {'g', 6},
-    {'h', 7}};
-map<char, int> num_map = {
-    {'1', 0},
-    {'2', 1},
-    {'3', 2},
-    {'4', 3},
-    {'5', 4},
-    {'6', 5},
-    {'7', 6},
-    {'8', 7}};
 
 class Piece : public Player
 {
@@ -43,6 +24,7 @@ private:
     Symbol symbol;
     int x;
     int y;
+    bool moved = false;
 
 public:
     Piece() {}
@@ -66,6 +48,10 @@ public:
     {
         this->y = y;
     }
+    void setMoved()
+    {
+        this->moved = true;
+    }
     int getX()
     {
         return x;
@@ -74,14 +60,17 @@ public:
     {
         return y;
     }
+    bool getMoved()
+    {
+        return moved;
+    }
     virtual bool validMove(int x, int y, bool capture = false)
     {
         return true;
     }
-    // when cout
     void getInfo()
     {
-        cout << "Piece: " << (char)(symbol) << " " << color << " " << x << " " << y << endl;
+        cout << "Piece: " << (char)(symbol) << " " << color << " " << x << " " << y << std::endl;
     }
 };
 
@@ -126,8 +115,8 @@ public:
     Rook(int color, int x, int y) : Piece(color, Symbol::ROOK, x, y) {}
     bool validMove(int x, int y, bool capture = false)
     {
-        cout << "Checking rook" << endl;
-        cout << this->getX() << " " << this->getY() << " " << x << " " << y << endl;
+        cout << "Checking rook" << std::endl;
+        cout << this->getX() << " " << this->getY() << " " << x << " " << y << std::endl;
         return this->getX() == x || this->getY() == y;
     }
 };
@@ -138,8 +127,8 @@ public:
     Knight(int color, int x, int y) : Piece(color, Symbol::KNIGHT, x, y) {}
     bool validMove(int x, int y, bool capture = false)
     {
-        cout << "Checking knight" << endl;
-        cout << this->getX() << " " << this->getY() << " " << x << " " << y << endl;
+        cout << "Checking knight" << std::endl;
+        cout << this->getX() << " " << this->getY() << " " << x << " " << y << std::endl;
         return abs(this->getX() - x) == 2 && abs(this->getY() - y) == 1 || abs(this->getX() - x) == 1 && abs(this->getY() - y) == 2;
     }
 };
@@ -176,11 +165,11 @@ public:
 
 class Board
 {
-    mutable vector<vector<shared_ptr<Piece>>> board;
-    mutable vector<shared_ptr<Piece>> white_pieces;
-    mutable vector<shared_ptr<Piece>> black_pieces;
-    mutable vector<shared_ptr<Piece>> white_capture;
-    mutable vector<shared_ptr<Piece>> black_capture;
+    mutable std::vector<Row> board;
+    mutable Row white_pieces;
+    mutable Row black_pieces;
+    mutable Row white_capture;
+    mutable Row black_capture;
     mutable int turn = Piece::WHITE;
 
 public:
@@ -208,7 +197,7 @@ private:
     bool checkOverlap(int start_x, int start_y, int end_x, int end_y)
     {
         // return true if no overlap
-        cout << "Checking overlap" << endl;
+        cout << "Checking overlap" << std::endl;
         int x_diff = end_x - start_x;
         int y_diff = end_y - start_y;
         int x_dir = x_diff == 0 ? 0 : x_diff / abs(x_diff);
@@ -223,12 +212,38 @@ private:
         return true;
     }
 
+    void short_castle(int color)
+    {
+        int rank = color == Piece::WHITE ? 0 : 7;
+        std::shared_ptr<Piece> king = board[rank][4];
+        std::shared_ptr<Piece> rook = board[rank][7];
+
+        if (!checkOverlap(king->getX(), king->getY(), 6, rank) || !checkOverlap(rook->getX(), rook->getY(), 5, rank))
+        {
+            _err("can't short castle; pieces in the way");
+            return;
+        }
+        if (king->getSymbol() != Symbol::KING || rook->getSymbol() != Symbol::ROOK)
+        {
+            _err("you can't short castle here!");
+            return;
+        }
+
+        if (king->getMoved() || rook->getMoved())
+        {
+            _err("can't short castle; piece has been moved before");
+            return;
+        }
+        makeMove(king, 6, rank);
+        makeMove(rook, 5, rank);
+    }
+
     void requestMove()
     {
-        string input;
-        cout << "It is " << (turn == Piece::WHITE ? "white" : "black") << "'s turn" << endl;
-        cout << "Enter a move: " << endl;
-        cin >> input;
+        std::string input;
+        std::cout << "It is " << (turn == Piece::WHITE ? "white" : "black") << "'s turn" << std::endl;
+        std::cout << "Enter a move: " << std::endl;
+        std::cin >> input;
         if (!parseMove(input))
         {
             displayBoard();
@@ -236,45 +251,46 @@ private:
         }
     }
 
-    shared_ptr<Piece> pieceFromSymbol(Symbol symbol, int color, int x, int y)
+    std::shared_ptr<Piece> pieceFromSymbol(Symbol symbol, int color, int x, int y)
     {
         switch (symbol)
         {
         case Symbol::PAWN:
-            return make_shared<Pawn>(color, x, y);
+            return std::make_shared<Pawn>(color, x, y);
         case Symbol::ROOK:
-            return make_shared<Rook>(color, x, y);
+            return std::make_shared<Rook>(color, x, y);
         case Symbol::KNIGHT:
-            return make_shared<Knight>(color, x, y);
+            return std::make_shared<Knight>(color, x, y);
         case Symbol::BISHOP:
-            return make_shared<Bishop>(color, x, y);
+            return std::make_shared<Bishop>(color, x, y);
         case Symbol::QUEEN:
-            return make_shared<Queen>(color, x, y);
+            return std::make_shared<Queen>(color, x, y);
         case Symbol::KING:
-            return make_shared<King>(color, x, y);
+            return std::make_shared<King>(color, x, y);
         default:
-            return make_shared<Piece>(-1, Symbol::EMPTY, x, y);
+            return std::make_shared<Piece>(-1, Symbol::EMPTY, x, y);
         }
     }
 
-    void makeMove(shared_ptr<Piece> piece, int new_file, int new_rank)
+    void makeMove(std::shared_ptr<Piece> piece, int new_file, int new_rank)
     {
-        cout << new_file << " " << new_rank << endl;
+        std::cout << new_file << " " << new_rank << std::endl;
         int old_file = piece->getX();
         int old_rank = piece->getY();
 
-        board[old_rank][old_file] = make_shared<Piece>(-1, Symbol::EMPTY, old_file, old_rank);
+        board[old_rank][old_file] = std::make_shared<Piece>(-1, Symbol::EMPTY, old_file, old_rank);
         piece->setX(new_file);
         piece->setY(new_rank);
+        piece->setMoved();
         board[new_rank][new_file] = piece;
     }
 
     void implementCapture(int color, int x, int y)
     {
-        cout << "Implementing capture " << x << " " << y << endl;
-        vector<shared_ptr<Piece>> *piece_list = color == Piece::WHITE ? &black_pieces : &white_pieces;
-        vector<shared_ptr<Piece>> *capture_list = color == Piece::WHITE ? &white_capture : &black_capture;
-        for (vector<shared_ptr<Piece>>::iterator it = piece_list->begin(); it != piece_list->end(); ++it)
+        std::cout << "Implementing capture " << x << " " << y << std::endl;
+        Row *piece_list = color == Piece::WHITE ? &black_pieces : &white_pieces;
+        Row *capture_list = color == Piece::WHITE ? &white_capture : &black_capture;
+        for (Row::iterator it = piece_list->begin(); it != piece_list->end(); ++it)
         {
             if ((*it)->getX() == x && (*it)->getY() == y)
             {
@@ -286,11 +302,17 @@ private:
         }
     }
 
-    bool parseMove(string input)
+    bool parseMove(std::string input)
     {
+        if (input == "0-0")
+        {
+            short_castle(turn);
+            return true;
+        }
+
         if (input.length() < 2)
         {
-            _err("Too short");
+            _err("too short");
             return false;
         }
         char file = input[input.length() - 2];
@@ -298,13 +320,13 @@ private:
 
         if (!inRange(file, rank))
         {
-            _err("Out of range");
+            _err("out of range");
             return false;
         }
 
         if (board[num_map[rank]][letter_map[file]]->getColor() == turn)
         {
-            _err("Cannot capture own piece");
+            _err("cannot capture own piece");
             return false;
         }
 
@@ -334,11 +356,11 @@ private:
             disambiguation = input.length() == 3 ? ' ' : input[1];
         }
         disambiguation = disambiguation == 'x' ? ' ' : disambiguation;
-        cout << piece << " " << file << " " << rank << " " << capture << " " << disambiguation << endl;
-        vector<shared_ptr<Piece>> valid_pieces = {};
-        for (vector<shared_ptr<Piece>> row : board)
+        cout << piece << " " << file << " " << rank << " " << capture << " " << disambiguation << std::endl;
+        Row valid_pieces = {};
+        for (Row row : board)
         {
-            for (shared_ptr<Piece> p : row)
+            for (std::shared_ptr<Piece> p : row)
             {
                 if ((char)(p->getSymbol()) != piece || p->getColor() != turn)
                 {
@@ -350,22 +372,22 @@ private:
                 }
             }
         }
-        for (shared_ptr<Piece> p : valid_pieces)
+        for (std::shared_ptr<Piece> p : valid_pieces)
         {
             int x = letter_map[file];
             int y = num_map[rank];
             if (p->getX() == x && p->getY() == y)
                 continue;
-            cout << "Checking piece: " << (char)(p->getSymbol()) << " " << p->getX() << " " << p->getY() << endl;
+            std::cout << "Checking piece: " << (char)(p->getSymbol()) << " " << p->getX() << " " << p->getY() << std::endl;
             if (p->validMove(letter_map[file], num_map[rank], capture))
             {
-                cout << "Found a piece to check: " << (char)(p->getSymbol()) << " " << p->getX() << " " << p->getY() << endl;
+                std::cout << "Found a piece to check: " << (char)(p->getSymbol()) << " " << p->getX() << " " << p->getY() << std::endl;
                 if (!(piece == 'N') && !checkOverlap(p->getX(), p->getY(), x, y))
                 {
                     _err("overlap");
                     continue;
                 }
-                cout << "Valid move" << endl;
+                std::cout << "Valid move" << std::endl;
                 if (capture)
                     implementCapture(turn, x, y);
                 makeMove(p, x, y);
@@ -378,7 +400,7 @@ private:
 
     void setupBoard()
     {
-        vector<Symbol> backRow = {Symbol::ROOK, Symbol::KNIGHT, Symbol::BISHOP, Symbol::QUEEN, Symbol::KING, Symbol::BISHOP, Symbol::KNIGHT, Symbol::ROOK};
+        std::vector<Symbol> backRow = {Symbol::ROOK, Symbol::KNIGHT, Symbol::BISHOP, Symbol::QUEEN, Symbol::KING, Symbol::BISHOP, Symbol::KNIGHT, Symbol::ROOK};
         board.resize(8);
         for (int i = 0; i < 8; i++)
         {
@@ -397,20 +419,18 @@ private:
         }
     }
 
-    void printList(vector<shared_ptr<Piece>> list)
+    void printList(Row list)
     {
-        vector<shared_ptr<Piece>> sorted_list = {};
+        Row sorted_list = {};
         for (Symbol symbol : {Symbol::KING, Symbol::QUEEN, Symbol::ROOK, Symbol::BISHOP, Symbol::KNIGHT, Symbol::PAWN})
         {
-            for (shared_ptr<Piece> p : list)
+            for (std::shared_ptr<Piece> p : list)
             {
                 if (p->getSymbol() == symbol)
-                {
                     sorted_list.push_back(p);
-                }
             }
         }
-        for (shared_ptr<Piece> p : sorted_list)
+        for (std::shared_ptr<Piece> p : sorted_list)
         {
             cout << Color::to_chess_piece(p->getColor(), p->getSymbol()) << " ";
         }
@@ -420,47 +440,47 @@ private:
     {
         for (int y = board.size() - 1; y >= 0; y--)
         {
-            cout << y << " ";
-            cout << y + 1 << " ";
+            std::cout << y << " ";
+            std::cout << y + 1 << " ";
             for (int x = 0; x < board[0].size(); x++)
             {
                 int color = board[y][x]->getColor();
                 Symbol symbol = board[y][x]->getSymbol();
-                cout << Color::getColoredString(symbol, Foreground::WHITE, (x + y) % 2 == 0 ? Background::BEIGE : Background::GREEN, color);
+                std::cout << Color::getColoredString(symbol, Foreground::WHITE, (x + y) % 2 == 0 ? Background::BEIGE : Background::GREEN, color);
             }
             switch (y)
             {
             case 7:
-                cout << "    White pieces: ";
+                std::cout << "    White pieces: ";
                 printList(white_pieces);
                 break;
             case 6:
-                cout << "    Black pieces: ";
+                std::cout << "    Black pieces: ";
                 printList(black_pieces);
                 break;
             case 5:
-                cout << "    White captured: ";
+                std::cout << "    White captured: ";
                 printList(white_capture);
                 break;
             case 4:
-                cout << "    Black captured: ";
+                std::cout << "    Black captured: ";
                 printList(black_capture);
                 break;
             }
-            cout << endl;
+            std::cout << std::endl;
         }
-        cout << "    ";
+        std::cout << "    ";
         for (int i = 0; i < 8; i++)
         {
-            cout << " " << coords[i] << " ";
+            std::cout << " " << coords[i] << " ";
         }
-        cout << endl
-             << "    ";
+        std::cout << std::endl
+                  << "    ";
         for (int i = 0; i < 8; i++)
         {
-            cout << " " << i << " ";
+            std::cout << " " << i << " ";
         }
-        cout << endl;
+        std::cout << std::endl;
     }
 };
 
