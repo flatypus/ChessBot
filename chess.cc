@@ -138,7 +138,9 @@ public:
     Knight(int color, int x, int y) : Piece(color, Symbol::KNIGHT, x, y) {}
     bool validMove(int x, int y, bool capture = false)
     {
-        return false;
+        cout << "Checking knight" << endl;
+        cout << this->getX() << " " << this->getY() << " " << x << " " << y << endl;
+        return abs(this->getX() - x) == 2 && abs(this->getY() - y) == 1 || abs(this->getX() - x) == 1 && abs(this->getY() - y) == 2;
     }
 };
 
@@ -158,7 +160,7 @@ public:
     Queen(int color, int x, int y) : Piece(color, Symbol::QUEEN, x, y) {}
     bool validMove(int x, int y, bool capture = false)
     {
-        return false;
+        return abs(this->getX() - x) == abs(this->getY() - y) || this->getX() == x || this->getY() == y;
     }
 };
 
@@ -168,7 +170,7 @@ public:
     King(int color, int x, int y) : Piece(color, Symbol::KING, x, y) {}
     bool validMove(int x, int y, bool capture = false)
     {
-        return false;
+        return abs(this->getX() - x) <= 1 && abs(this->getY() - y) <= 1;
     }
 };
 
@@ -358,7 +360,7 @@ private:
             if (p->validMove(letter_map[file], num_map[rank], capture))
             {
                 cout << "Found a piece to check: " << (char)(p->getSymbol()) << " " << p->getX() << " " << p->getY() << endl;
-                if (!checkOverlap(p->getX(), p->getY(), x, y))
+                if (!(piece == 'N') && !checkOverlap(p->getX(), p->getY(), x, y))
                 {
                     _err("overlap");
                     continue;
@@ -374,8 +376,7 @@ private:
         return false;
     }
 
-    void
-    setupBoard()
+    void setupBoard()
     {
         vector<Symbol> backRow = {Symbol::ROOK, Symbol::KNIGHT, Symbol::BISHOP, Symbol::QUEEN, Symbol::KING, Symbol::BISHOP, Symbol::KNIGHT, Symbol::ROOK};
         board.resize(8);
