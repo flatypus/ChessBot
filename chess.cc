@@ -124,7 +124,7 @@ class Rook : public Piece
 {
 public:
     Rook(int color, int x, int y) : Piece(color, Symbol::ROOK, x, y) {}
-    bool validMove(int x, int y)
+    bool validMove(int x, int y, bool capture = false)
     {
         cout << "Checking rook" << endl;
         cout << this->getX() << " " << this->getY() << " " << x << " " << y << endl;
@@ -136,7 +136,7 @@ class Knight : public Piece
 {
 public:
     Knight(int color, int x, int y) : Piece(color, Symbol::KNIGHT, x, y) {}
-    bool validMove(int x, int y)
+    bool validMove(int x, int y, bool capture = false)
     {
         return false;
     }
@@ -146,9 +146,9 @@ class Bishop : public Piece
 {
 public:
     Bishop(int color, int x, int y) : Piece(color, Symbol::BISHOP, x, y) {}
-    bool validMove(int x, int y)
+    bool validMove(int x, int y, bool capture = false)
     {
-        return false;
+        return abs(this->getX() - x) == abs(this->getY() - y);
     }
 };
 
@@ -156,7 +156,7 @@ class Queen : public Piece
 {
 public:
     Queen(int color, int x, int y) : Piece(color, Symbol::QUEEN, x, y) {}
-    bool validMove(int x, int y)
+    bool validMove(int x, int y, bool capture = false)
     {
         return false;
     }
@@ -166,7 +166,7 @@ class King : public Piece
 {
 public:
     King(int color, int x, int y) : Piece(color, Symbol::KING, x, y) {}
-    bool validMove(int x, int y)
+    bool validMove(int x, int y, bool capture = false)
     {
         return false;
     }
@@ -307,37 +307,37 @@ private:
         }
 
         bool capture = board[num_map[rank]][letter_map[file]]->getSymbol() != Symbol::EMPTY;
-        char piece;
+        char piece = isupper(input[0]) ? input[0] : 'P';
         char disambiguation;
-        if (capture)
+
+        if (capture && count(input, 'x') != 1)
         {
-            piece = isupper(input[0]) ? input[0] : 'P';
+            _err("proper algebraic notation requires 'x' for captures");
+            return false;
         }
-        else
-        {
-            piece = input.length() == 2 ? 'P' : input[0];
-        }
+
         if (piece != 'P' && piece != 'R' && piece != 'N' && piece != 'B' && piece != 'Q' && piece != 'K')
         {
-            _err("Invalid piece");
+            _err("invalid piece");
             return false;
         }
         if (piece == 'P')
         {
+            // if the move is pawn like fxe4, the disambiguator is f
             disambiguation = input.length() == 2 ? ' ' : input[0];
         }
         else
         {
+            // otherwise if the move is rook like R6g4, the disambiguator is 6
             disambiguation = input.length() == 3 ? ' ' : input[1];
         }
+        disambiguation = disambiguation == 'x' ? ' ' : disambiguation;
         cout << piece << " " << file << " " << rank << " " << capture << " " << disambiguation << endl;
         vector<shared_ptr<Piece>> valid_pieces = {};
         for (vector<shared_ptr<Piece>> row : board)
         {
             for (shared_ptr<Piece> p : row)
             {
-                // fxe4
-                // R6g4
                 if ((char)(p->getSymbol()) != piece || p->getColor() != turn)
                 {
                     continue;
